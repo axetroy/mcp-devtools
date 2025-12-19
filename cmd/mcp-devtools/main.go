@@ -18,6 +18,13 @@ var (
 	builtBy = "unknown"
 )
 
+// Luminance coefficients for relative luminance calculation (ITU-R BT.709)
+const (
+	RedLuminance   = 0.2126
+	GreenLuminance = 0.7152
+	BlueLuminance  = 0.0722
+)
+
 // max returns the maximum of three float64 values
 func max(a, b, c float64) float64 {
 	if a > b {
@@ -30,6 +37,17 @@ func max(a, b, c float64) float64 {
 		return b
 	}
 	return c
+}
+
+// rgbToCMYK converts RGB values (0-1 range) to CMYK values (0-1 range)
+func rgbToCMYK(r, g, b float64) (c, m, y, k float64) {
+	k = 1.0 - max(r, g, b)
+	if k < 1.0 {
+		c = (1.0 - r - k) / (1.0 - k)
+		m = (1.0 - g - k) / (1.0 - k)
+		y = (1.0 - b - k) / (1.0 - k)
+	}
+	return c, m, y, k
 }
 
 // ColorInput represents the input for color conversion tool
@@ -76,20 +94,14 @@ func ColorConversionTool(ctx context.Context, req *mcp.CallToolRequest, input Co
 	h, s, l := color.Hsl()
 	hv, sv, v := color.Hsv()
 
-	// Calculate CMYK manually
+	// Calculate CMYK
 	rf, gf, bf := float64(r)/255.0, float64(g)/255.0, float64(b)/255.0
-	k := 1.0 - max(rf, gf, bf)
-	var c, m, y float64
-	if k < 1.0 {
-		c = (1.0 - rf - k) / (1.0 - k)
-		m = (1.0 - gf - k) / (1.0 - k)
-		y = (1.0 - bf - k) / (1.0 - k)
-	}
+	c, m, y, k := rgbToCMYK(rf, gf, bf)
 
 	lab_l, lab_a, lab_b := color.Lab()
 	x, yv, z := color.Xyz()
 	lr, lg, lb := color.LinearRgb()
-	luminance := (0.2126*float64(r) + 0.7152*float64(g) + 0.0722*float64(b)) / 255.0
+	luminance := (RedLuminance*float64(r) + GreenLuminance*float64(g) + BlueLuminance*float64(b)) / 255.0
 
 	output := &ColorOutput{
 		Hex:       color.Hex(),
