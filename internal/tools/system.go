@@ -74,25 +74,23 @@ func GetNetworkInfo(args map[string]interface{}) (interface{}, error) {
 
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("ipconfig")
-	} else {
-		cmd = exec.Command("ifconfig")
 		output, err := cmd.Output()
 		if err != nil {
-			// Try ip command if ifconfig is not available
-			cmd = exec.Command("ip", "addr")
-			output, err = cmd.Output()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get network info: %w", err)
-			}
-			return string(output), nil
+			return nil, fmt.Errorf("failed to get network info: %w", err)
 		}
 		return string(output), nil
 	}
 
+	cmd = exec.Command("ifconfig")
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get network info: %w", err)
+		// Try ip command if ifconfig is not available
+		cmd = exec.Command("ip", "addr")
+		output, err = cmd.Output()
+		if err != nil {
+			return nil, fmt.Errorf("failed to get network info: %w", err)
+		}
+		return string(output), nil
 	}
-
 	return string(output), nil
 }
