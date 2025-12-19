@@ -36,15 +36,17 @@ func GetDiskUsage(args map[string]interface{}) (interface{}, error) {
 		path = "."
 	}
 
-	cmd := exec.Command("df", "-h", path)
+	var cmd *exec.Cmd
+
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("wmic", "logicaldisk", "get", "size,freespace,caption")
+	} else {
+		cmd = exec.Command("df", "-h", path)
+	}
+
 	output, err := cmd.Output()
 	if err != nil {
-		// Try Windows version
-		cmd = exec.Command("wmic", "logicaldisk", "get", "size,freespace,caption")
-		output, err = cmd.Output()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get disk usage: %w", err)
-		}
+		return nil, fmt.Errorf("failed to get disk usage: %w", err)
 	}
 
 	return string(output), nil

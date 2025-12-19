@@ -3,11 +3,15 @@ package tools
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 )
 
 // ExecuteCommand executes a shell command
+// Note: This uses simple command splitting and does not support quoted arguments with spaces.
+// For complex shell syntax, the shell should be explicitly invoked (e.g., "sh -c <command>").
 func ExecuteCommand(args map[string]interface{}) (interface{}, error) {
 	command, ok := args["command"].(string)
 	if !ok {
@@ -16,13 +20,14 @@ func ExecuteCommand(args map[string]interface{}) (interface{}, error) {
 
 	workDir, _ := args["workdir"].(string)
 
-	// Split command into parts
-	parts := strings.Fields(command)
-	if len(parts) == 0 {
-		return nil, fmt.Errorf("empty command")
+	// Use shell for command execution to properly handle quotes and complex syntax
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", command)
+	} else {
+		cmd = exec.Command("sh", "-c", command)
 	}
 
-	cmd := exec.Command(parts[0], parts[1:]...)
 	if workDir != "" {
 		cmd.Dir = workDir
 	}
@@ -44,22 +49,16 @@ func ExecuteCommand(args map[string]interface{}) (interface{}, error) {
 
 // GetEnvironment gets environment variables
 func GetEnvironment(args map[string]interface{}) (interface{}, error) {
-	cmd := exec.Command("env")
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get environment: %w", err)
-	}
-
-	return string(output), nil
+	envVars := os.Environ()
+	return strings.Join(envVars, "\n"), nil
 }
 
 // GetWorkingDirectory gets the current working directory
 func GetWorkingDirectory(args map[string]interface{}) (interface{}, error) {
-	cmd := exec.Command("pwd")
-	output, err := cmd.Output()
+	dir, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get working directory: %w", err)
 	}
 
-	return strings.TrimSpace(string(output)), nil
+	return dir, nil
 }

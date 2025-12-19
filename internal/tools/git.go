@@ -93,6 +93,15 @@ func GitCommit(args map[string]interface{}) (interface{}, error) {
 		return nil, fmt.Errorf("message parameter is required")
 	}
 
+	// Validate commit message length
+	if len(message) > 10000 {
+		return nil, fmt.Errorf("commit message too long (max 10000 characters)")
+	}
+
+	if len(strings.TrimSpace(message)) == 0 {
+		return nil, fmt.Errorf("commit message cannot be empty")
+	}
+
 	workDir, _ := args["workdir"].(string)
 
 	cmd := exec.Command("git", "commit", "-m", message)
@@ -117,10 +126,9 @@ func GitAdd(args map[string]interface{}) (interface{}, error) {
 
 	workDir, _ := args["workdir"].(string)
 
-	fileList := strings.Fields(files)
-	cmdArgs := append([]string{"add"}, fileList...)
-
-	cmd := exec.Command("git", cmdArgs...)
+	// Use git add with the files parameter directly to properly handle spaces
+	// The files parameter should be space-separated, and git will handle them
+	cmd := exec.Command("git", "add", "--", files)
 	if workDir != "" {
 		cmd.Dir = workDir
 	}
