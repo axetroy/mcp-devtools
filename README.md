@@ -6,44 +6,28 @@
 
 ## MCP DevTools
 
-> A Model Context Protocol (MCP) server that provides a comprehensive set of developer tools for local development.
+> A Model Context Protocol (MCP) server that provides useful developer tools for local development.
 
-MCP DevTools is an MCP server implementation that exposes useful development tools through the Model Context Protocol. It allows AI assistants and other MCP clients to interact with your local development environment through a standardized interface.
+MCP DevTools is an MCP server implementation built with the [official MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk) that exposes useful development tools through the Model Context Protocol. It allows AI assistants and other MCP clients to interact with your local development environment through a standardized interface.
 
 ### Features
 
-This MCP server provides the following categories of tools:
+This MCP server provides the following tools:
 
-#### File Operations
-- **read_file** - Read the contents of a file
-- **write_file** - Write content to a file
-- **list_files** - List files in a directory
-- **file_exists** - Check if a file exists
-- **delete_file** - Delete a file
+#### Color Conversion
+- **color_convert** - Convert CSS color values to various color formats
+  - Input: CSS color value (e.g., `#ff5733`, `rgb(255, 87, 51)`, `hsl(9, 100%, 60%)`, or named colors like `red`)
+  - Output: Hex, RGB, HSL, HSV, CMYK, LAB, XYZ, Linear RGB representations
+  - Additional info: Luminance, whether the color is light or dark
 
-#### Command Execution
-- **execute_command** - Execute shell commands
-- **get_environment** - Get environment variables
-- **get_working_directory** - Get the current working directory
-
-#### Git Operations
-- **git_status** - Get repository status
-- **git_diff** - Get diff of changes
-- **git_log** - View commit history
-- **git_branch** - List branches
-- **git_add** - Stage files for commit
-- **git_commit** - Create commits
-
-#### System Information
-- **get_system_info** - Get OS, architecture, and system details
-- **get_hostname** - Get system hostname
-- **get_disk_usage** - Get disk usage information
-- **get_process_list** - List running processes
-- **get_network_info** - Get network configuration
+#### Network Information
+- **get_ip_address** - Get the current computer's IP addresses
+  - Returns all active network interface IP addresses
+  - Identifies the primary IP address (first non-loopback IPv4)
 
 ### Usage
 
-The MCP DevTools server communicates via JSON-RPC over stdin/stdout. It follows the Model Context Protocol specification.
+The MCP DevTools server communicates via the Model Context Protocol over stdin/stdout. It follows the MCP specification and is built with the official Go SDK.
 
 To use with an MCP client:
 
@@ -51,7 +35,73 @@ To use with an MCP client:
 mcp-devtools
 ```
 
-The server will start and wait for JSON-RPC requests on stdin, sending responses to stdout.
+The server will start and wait for MCP requests on stdin, sending responses to stdout.
+
+#### Example: Color Conversion
+
+Request:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "color_convert",
+    "arguments": {
+      "color": "#ff5733"
+    }
+  }
+}
+```
+
+Response:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "hex": "#ff5733",
+    "rgb": "rgb(255, 87, 51)",
+    "hsl": "hsl(9.0, 100.0%, 60.0%)",
+    "hsv": "hsv(9.0, 80.0%, 100.0%)",
+    "cmyk": "cmyk(0.0%, 65.9%, 80.0%, 0.0%)",
+    "lab": "lab(61.57, 56.45, 51.48)",
+    "xyz": "xyz(0.469, 0.305, 0.074)",
+    "linear_rgb": "linear-rgb(1.000, 0.106, 0.030)",
+    "luminance": 0.428,
+    "is_light": false,
+    "is_dark": true,
+    "original": "#ff5733"
+  }
+}
+```
+
+#### Example: Get IP Address
+
+Request:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "get_ip_address",
+    "arguments": {}
+  }
+}
+```
+
+Response:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "addresses": ["192.168.1.100", "fe80::1"],
+    "primary": "192.168.1.100"
+  }
+}
+```
 
 ### Install
 
