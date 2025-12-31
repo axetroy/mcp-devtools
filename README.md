@@ -25,6 +25,13 @@ This MCP server provides the following tools:
   - Returns all active network interface IP addresses
   - Identifies the primary IP address (first non-loopback IPv4)
 
+#### NPM Package Analysis
+- **npm_dependencies_analyze** - Get npm package information and analyze its dependencies
+  - Input: Package name (e.g., `express`, `react`, `@types/node`) and optional version
+  - Output: Package metadata, dependencies, dev dependencies, peer dependencies, version information
+  - Fetches data from the official npm registry
+  - Analyzes latest version by default, or specify a version
+
 ### Usage
 
 The MCP DevTools server communicates via the Model Context Protocol over stdin/stdout. It follows the MCP specification and is built with the official Go SDK.
@@ -99,6 +106,89 @@ Response:
   "result": {
     "addresses": ["192.168.1.100", "fe80::1"],
     "primary": "192.168.1.100"
+  }
+}
+```
+
+#### Example: NPM Package Analysis
+
+Request:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "npm_dependencies_analyze",
+    "arguments": {
+      "package_name": "express"
+    }
+  }
+}
+```
+
+Response:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "name": "express",
+    "version": "5.2.1",
+    "description": "Fast, unopinionated, minimalist web framework",
+    "license": "MIT",
+    "homepage": "http://expressjs.com/",
+    "repository": "https://github.com/expressjs/express",
+    "dependencies": {
+      "accepts": "~1.3.8",
+      "body-parser": "2.1.0",
+      "content-disposition": "0.5.5",
+      "cookie": "0.7.2",
+      "cookie-signature": "1.2.3",
+      "debug": "2.6.9",
+      "escape-html": "~1.0.3",
+      "etag": "~1.8.1",
+      "finalhandler": "1.3.1",
+      "methods": "~1.1.2",
+      "mime-types": "~2.1.18",
+      "on-finished": "2.4.1",
+      "parseurl": "~1.3.3",
+      "path-to-regexp": "0.1.12",
+      "proxy-addr": "~2.0.7",
+      "qs": "6.13.2",
+      "range-parser": "~1.2.1",
+      "safe-buffer": "5.2.1",
+      "send": "1.1.1",
+      "serve-static": "2.1.2",
+      "setprototypeof": "1.2.0",
+      "statuses": "2.0.1",
+      "type-is": "~1.6.18",
+      "utils-merge": "1.0.1",
+      "vary": "~1.1.2"
+    },
+    "dev_dependencies": {},
+    "peer_dependencies": {},
+    "dependency_count": 28,
+    "author": "TJ Holowaychuk <tj@vision-media.ca>",
+    "keywords": ["express", "framework", "sinatra", "web", "http", "rest", "restful", "router", "app", "api"],
+    "latest_version": "5.2.1",
+    "publish_time": "2024-12-25T14:49:15.000Z"
+  }
+}
+```
+
+You can also analyze a specific version:
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": {
+    "name": "npm_dependencies_analyze",
+    "arguments": {
+      "package_name": "express",
+      "version": "4.18.0"
+    }
   }
 }
 ```

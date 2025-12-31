@@ -59,6 +59,11 @@ func main() {
 		Description: "Open a specified URL in the default web browser of the system.",
 	}, tools.OpenInBrowser)
 
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "npm_dependencies_analyze",
+		Description: "Get npm package information and analyze its dependencies. Fetches package metadata, dependencies, dev dependencies, and peer dependencies from the npm registry.",
+	}, tools.NpmDependenciesAnalyze)
+
 	log.Println("MCP server started (version:", version, "commit:", commit, "date:", date, "builtBy:", builtBy+")")
 
 	// Run the server over stdin/stdout
