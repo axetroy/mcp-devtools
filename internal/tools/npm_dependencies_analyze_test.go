@@ -2,6 +2,7 @@ package tools
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -172,8 +173,13 @@ func TestNpmDependenciesAnalyzeDependencyTree(t *testing.T) {
 	t.Logf("Total Dependencies: %d", output.TotalDependencies)
 	t.Logf("Tree Depth: %d", output.TreeDepth)
 
-	// Verify tree structure
-	for depName, depNode := range output.DependencyTree {
+	// Verify tree structure by parsing the JSON
+	var dependencyTree map[string]*DependencyNode
+	if err := json.Unmarshal(output.DependencyTree, &dependencyTree); err != nil {
+		t.Fatalf("Failed to parse dependency tree JSON: %v", err)
+	}
+
+	for depName, depNode := range dependencyTree {
 		t.Logf("  Dependency: %s (%s) -> version %s", depName, depNode.VersionRange, depNode.Version)
 		if depNode.Dependencies != nil {
 			for subDepName, subDepNode := range depNode.Dependencies {

@@ -38,19 +38,19 @@ type DependencyNode struct {
 
 // npmPackageOutput represents the analyzed npm package information
 type npmPackageOutput struct {
-	Name              string                     `json:"name" jsonschema:"Package name"`
-	Version           string                     `json:"version" jsonschema:"Package version analyzed"`
-	Description       string                     `json:"description" jsonschema:"Package description"`
-	License           string                     `json:"license,omitempty" jsonschema:"Package license"`
-	Homepage          string                     `json:"homepage,omitempty" jsonschema:"Package homepage URL"`
-	Repository        string                     `json:"repository,omitempty" jsonschema:"Package repository URL"`
-	Author            string                     `json:"author,omitempty" jsonschema:"Package author"`
-	Keywords          []string                   `json:"keywords,omitempty" jsonschema:"Package keywords"`
-	LatestVersion     string                     `json:"latest_version" jsonschema:"Latest available version of the package"`
-	PublishTime       string                     `json:"publish_time,omitempty" jsonschema:"Time when this version was published"`
-	DependencyTree    map[string]*DependencyNode `json:"dependency_tree" jsonschema:"Complete dependency tree with nested dependencies"`
-	TotalDependencies int                        `json:"total_dependencies" jsonschema:"Total number of unique dependencies (including transitive)"`
-	TreeDepth         int                        `json:"tree_depth" jsonschema:"Maximum depth of the dependency tree"`
+	Name              string          `json:"name" jsonschema:"Package name"`
+	Version           string          `json:"version" jsonschema:"Package version analyzed"`
+	Description       string          `json:"description" jsonschema:"Package description"`
+	License           string          `json:"license,omitempty" jsonschema:"Package license"`
+	Homepage          string          `json:"homepage,omitempty" jsonschema:"Package homepage URL"`
+	Repository        string          `json:"repository,omitempty" jsonschema:"Package repository URL"`
+	Author            string          `json:"author,omitempty" jsonschema:"Package author"`
+	Keywords          []string        `json:"keywords,omitempty" jsonschema:"Package keywords"`
+	LatestVersion     string          `json:"latest_version" jsonschema:"Latest available version of the package"`
+	PublishTime       string          `json:"publish_time,omitempty" jsonschema:"Time when this version was published"`
+	DependencyTree    json.RawMessage `json:"dependency_tree" jsonschema:"Complete dependency tree with nested dependencies (as JSON object)"`
+	TotalDependencies int             `json:"total_dependencies" jsonschema:"Total number of unique dependencies (including transitive)"`
+	TreeDepth         int             `json:"tree_depth" jsonschema:"Maximum depth of the dependency tree"`
 }
 
 // npmRegistryResponse represents the npm registry API response structure
@@ -145,6 +145,19 @@ func NpmDependenciesAnalyze(ctx context.Context, req *mcp.CallToolRequest, input
 	// Count total unique dependencies
 	totalDeps := countUniqueDependencies(dependencyTree, make(map[string]bool))
 
+	// Serialize the dependency tree to JSON to avoid cyclic type issues
+	var treeJSON json.RawMessage
+	if len(dependencyTree) > 0 {
+		treeBytes, err := json.Marshal(dependencyTree)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to serialize dependency tree: %w", err)
+		}
+		treeJSON = treeBytes
+	} else {
+		// Empty tree
+		treeJSON = json.RawMessage("{}")
+	}
+
 	output := &npmPackageOutput{
 		Name:              registryData.Name,
 		Version:           versionToAnalyze,
@@ -156,16 +169,13 @@ func NpmDependenciesAnalyze(ctx context.Context, req *mcp.CallToolRequest, input
 		Keywords:          registryData.Keywords,
 		LatestVersion:     latestVersion,
 		PublishTime:       publishTime,
-		DependencyTree:    dependencyTree,
+		DependencyTree:    treeJSON,
 		TotalDependencies: totalDeps,
 		TreeDepth:         maxTreeDepth,
 	}
 
 	if output.Keywords == nil {
 		output.Keywords = []string{}
-	}
-	if output.DependencyTree == nil {
-		output.DependencyTree = make(map[string]*DependencyNode)
 	}
 
 	return nil, output, nil
